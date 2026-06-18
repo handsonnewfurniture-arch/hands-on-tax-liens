@@ -1,0 +1,62 @@
+[
+  {
+    "county": "Jefferson",
+    "state": "AL",
+    "saleType": "Tax lien certificate",
+    "platform": "GovEase",
+    "registrationUrl": "https://www.govease.com",
+    "auctionDate": null,
+    "saleDateWindow": "Confirm current year date with county — prior years held in May (e.g. May 5–May 14 range historically)",
+    "format": "Online only — no in-person registration or auction",
+    "notes": "Two divisions (Bessemer and Birmingham) may have separate sale dates; both run via GovEase.",
+    "sourceUrl": "https://www.jccal.org/Default.asp?ID=2350&pg=Tax"
+  },
+  {
+    "county": "Madison",
+    "state": "AL",
+    "saleType": "Tax lien certificate",
+    "platform": "GovEase",
+    "registrationUrl": "https://www.govease.com",
+    "auctionDate": null,
+    "saleDateWindow": "Registration opens 30 days prior to auction; confirm exact 2026 date with county",
+    "format": "Online",
+    "notes": "First right of refusal to repurchase the lien at the same rate the following year if the property becomes delinquent again.",
+    "sourceUrl": "https://www.madisoncountyal.gov/departments/tax-collector/tax-sale"
+  },
+  {
+    "county": "Mobile",
+    "state": "AL",
+    "saleType": "Tax lien certificate",
+    "platform": "GovEase",
+    "registrationUrl": "https://www.govease.com",
+    "auctionDate": "2026-05-11",
+    "saleDateWindow": "May 11, 2026, 8:30am–4:00pm CDT (continues daily until complete)",
+    "format": "Online",
+    "notes": "Annual sale held between March 1 and June 15; parcel list published no later than March 30, 2026.",
+    "sourceUrl": "https://mobilecopropertytax.com/taxliensale/"
+  },
+  {
+    "county": "Shelby",
+    "state": "AL",
+    "saleType": "Tax lien certificate",
+    "platform": "GovEase",
+    "registrationUrl": "http://taxlienauction.shelbyal.com/",
+    "auctionDate": "2026-03-30",
+    "saleDateWindow": "Registration opened March 3, closed March 30, 2026",
+    "format": "Online",
+    "notes": "Dedicated county subdomain for tax lien info, registration handled via GovEase.",
+    "sourceUrl": "http://taxlienauction.shelbyal.com/"
+  },
+  {
+    "county": "Tuscaloosa",
+    "state": "AL",
+    "saleType": "Tax lien certificate",
+    "platform": "GovEase",
+    "registrationUrl": "https://www.govease.com",
+    "auctionDate": "2026-04-29",
+    "saleDateWindow": "April 29, 2026, 9:00am (continues until complete)",
+    "format": "Online",
+    "notes": "Max bid 12% simple interest, prorated monthly; lowest acceptable bid 0%.",
+    "sourceUrl": "https://www.tuscco.com/government/departments/tax-collector/tax-lien-sale/"
+  }
+]

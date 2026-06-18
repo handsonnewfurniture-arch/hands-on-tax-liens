@@ -1,0 +1,50 @@
+[
+  {
+    "county": "Jefferson",
+    "state": "AL",
+    "saleType": "Tax lien certificate",
+    "platform": "GovEase",
+    "registrationUrl": "https://www.govease.com (register, then select Jefferson County, AL — Birmingham and Bessemer divisions)",
+    "saleDateWindow": "Confirm current year date with county — prior years held in May (e.g. May 5–May 14 range historically)",
+    "format": "Online only — no in-person registration or auction",
+    "notes": "Two divisions (Bessemer and Birmingham) may have separate sale dates; both run via GovEase.",
+    "sourceUrl": "https://www.jccal.org/Default.asp?ID=2350&pg=Tax",
+    "auctionDate": null
+  },
+  {
+    "county": "Madison",
+    "state": "AL",
+    "saleType": "Tax lien certificate",
+    "platform": "GovEase",
+    "registrationUrl": "https://www.govease.com (register, then select Madison County, AL)",
+    "saleDateWindow": "Registration opens 30 days prior to auction; confirm exact 2026 date with county",
+    "format": "Online",
+    "notes": "First right of refusal to repurchase the lien at the same rate the following year if the property becomes delinquent again.",
+    "sourceUrl": "https://www.madisoncountyal.gov/departments/tax-collector/tax-sale",
+    "auctionDate": null
+  },
+  {
+    "county": "Mobile",
+    "state": "AL",
+    "saleType": "Tax lien certificate",
+    "platform": "GovEase",
+    "registrationUrl": "https://www.govease.com (register, then select Mobile County, AL)",
+    "saleDateWindow": "\"May 11",
+    "format": "2026",
+    "notes": "8:30am–4:00pm CDT (continues daily until complete)\"",
+    "sourceUrl": "Online",
+    "auctionDate": "\"Annual sale held between March 1 and June 15; parcel list published no later than March 30, 2026.\",https://mobilecopropertytax.com/taxliensale/,2026-05-11"
+  },
+  {
+    "county": "Tuscaloosa",
+    "state": "AL",
+    "saleType": "Tax lien certificate",
+    "platform": "GovEase",
+    "registrationUrl": "https://www.govease.com (register, then select Tuscaloosa County, AL)",
+    "saleDateWindow": "\"April 29",
+    "format": "2026",
+    "notes": "9:00am (continues until complete)\"",
+    "sourceUrl": "Online",
+    "auctionDate": "\"Max bid 12% simple interest, prorated monthly; lowest acceptable bid 0%.\",https://www.tuscco.com/government/departments/tax-collector/tax-lien-sale/,2026-04-29"
+  }
+]

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Search,
@@ -19,13 +19,51 @@ import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 
+interface County {
+  id: string
+  county: string
+  state: string
+  sale_type: string
+  platform: string
+  registration_url: string
+  auction_date: string | null
+  sale_date_window: string
+  format: string
+  notes: string | null
+  source_url: string | null
+}
+
 export default function Counties() {
   const [searchQuery, setSearchQuery] = useState('')
   const [stateFilter, setStateFilter] = useState('all')
-  const [sortBy, setSortBy] = useState('score')
+  const [sortBy, setSortBy] = useState('date')
+  const [counties, setCounties] = useState<County[]>([])
+  const [loading, setLoading] = useState(true)
+  const [allStates, setAllStates] = useState<string[]>([])
 
-  // Counties data - All links verified and working
-  const counties = [
+  useEffect(() => {
+    fetchCounties()
+  }, [])
+
+  const fetchCounties = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/counties/auctions')
+      const data = await res.json()
+
+      if (data.success) {
+        setCounties(data.counties)
+        setAllStates(data.states || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch counties:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Old hardcoded data for reference
+  const oldCounties = [
   
     {
       "id": 1,
@@ -1832,37 +1870,15 @@ export default function Counties() {
   
   ]
 
-  const getCrimeLevel = (score: number) => {
-    if (score <= 25) return { label: 'Very Low', variant: 'emerald' as const }
-    if (score <= 40) return { label: 'Low', variant: 'emerald' as const }
-    if (score <= 60) return { label: 'Moderate', variant: 'gold' as const }
-    return { label: 'High', variant: 'red' as const }
-  }
-
-  const getCompetitionColor = (level: string) => {
-    if (level === 'low') return 'emerald'
-    if (level === 'medium') return 'gold'
-    return 'red'
-  }
-
-  // State code to full name mapping
-  const stateCodeToName: { [key: string]: string } = {
-    'AL': 'Alabama', 'AZ': 'Arizona', 'CO': 'Colorado', 'FL': 'Florida',
-    'GA': 'Georgia', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
-    'MD': 'Maryland', 'MI': 'Michigan', 'MS': 'Mississippi', 'MO': 'Missouri',
-    'NV': 'Nevada', 'NJ': 'New Jersey', 'NC': 'North Carolina', 'OH': 'Ohio',
-    'PA': 'Pennsylvania', 'SC': 'South Carolina', 'TN': 'Tennessee',
-    'TX': 'Texas', 'WV': 'West Virginia'
-  }
-
   // Filter counties based on search and state filter
   const filteredCounties = counties.filter((county) => {
     const matchesSearch = searchQuery === '' ||
       county.county.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      county.state.toLowerCase().includes(searchQuery.toLowerCase())
+      county.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      county.platform.toLowerCase().includes(searchQuery.toLowerCase())
 
     const matchesState = stateFilter === 'all' ||
-      county.state === stateCodeToName[stateFilter]
+      county.state === stateFilter
 
     return matchesSearch && matchesState
   })
@@ -1870,18 +1886,26 @@ export default function Counties() {
   // Sort filtered counties
   const sortedCounties = [...filteredCounties].sort((a, b) => {
     switch (sortBy) {
-      case 'score':
-        return b.investorScore - a.investorScore
-      case 'interest':
-        return b.maxInterestRate - a.maxInterestRate
       case 'date':
-        return new Date(a.auctionDate).getTime() - new Date(b.auctionDate).getTime()
-      case 'value':
-        return b.medianHomeValue - a.medianHomeValue
+        // Sort by auction date (nulls last)
+        if (!a.auction_date && !b.auction_date) return 0
+        if (!a.auction_date) return 1
+        if (!b.auction_date) return -1
+        return new Date(a.auction_date).getTime() - new Date(b.auction_date).getTime()
+      case 'state':
+        return a.state.localeCompare(b.state)
+      case 'county':
+        return a.county.localeCompare(b.county)
       default:
         return 0
     }
   })
+
+  // Get upcoming auctions
+  const upcomingAuctions = counties
+    .filter(c => c.auction_date)
+    .sort((a, b) => new Date(a.auction_date!).getTime() - new Date(b.auction_date!).getTime())
+    .slice(0, 3)
 
   return (
     <div className="min-h-screen bg-navy-950">
@@ -1891,9 +1915,9 @@ export default function Counties() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="page-header mb-4">County Database</h1>
+            <h1 className="page-header mb-4">County Auctions 2026</h1>
             <p className="text-xl text-gray-300">
-              Explore {sortedCounties.length} of {counties.length} verified counties across 21 states with auction dates, interest rates, and investor scores
+              {loading ? 'Loading...' : `Explore ${sortedCounties.length} of ${counties.length} counties across ${allStates.length} states with upcoming auction schedules`}
             </p>
           </div>
 
@@ -1904,7 +1928,7 @@ export default function Counties() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search counties..."
+                  placeholder="Search counties, states, platforms..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="input-glass pl-10 w-full"
@@ -1917,28 +1941,10 @@ export default function Counties() {
                   onChange={(e) => setStateFilter(e.target.value)}
                   className="input-glass w-full appearance-none pr-10"
                 >
-                  <option value="all">All States (21)</option>
-                  <option value="AL">Alabama</option>
-                  <option value="AZ">Arizona</option>
-                  <option value="CO">Colorado</option>
-                  <option value="FL">Florida</option>
-                  <option value="GA">Georgia</option>
-                  <option value="IL">Illinois</option>
-                  <option value="IN">Indiana</option>
-                  <option value="IA">Iowa</option>
-                  <option value="MD">Maryland</option>
-                  <option value="MI">Michigan</option>
-                  <option value="MS">Mississippi</option>
-                  <option value="MO">Missouri</option>
-                  <option value="NV">Nevada</option>
-                  <option value="NJ">New Jersey</option>
-                  <option value="NC">North Carolina</option>
-                  <option value="OH">Ohio</option>
-                  <option value="PA">Pennsylvania</option>
-                  <option value="SC">South Carolina</option>
-                  <option value="TN">Tennessee</option>
-                  <option value="TX">Texas</option>
-                  <option value="WV">West Virginia</option>
+                  <option value="all">All States ({allStates.length})</option>
+                  {allStates.map(state => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
               </div>
@@ -1949,193 +1955,156 @@ export default function Counties() {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="input-glass w-full appearance-none pr-10"
                 >
-                  <option value="score">Highest Score</option>
-                  <option value="interest">Highest Interest</option>
-                  <option value="date">Next Auction</option>
-                  <option value="value">Median Value</option>
+                  <option value="date">Auction Date</option>
+                  <option value="state">State</option>
+                  <option value="county">County Name</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
               </div>
 
-              <Button variant="secondary" className="flex items-center justify-center">
+              <Button variant="secondary" className="flex items-center justify-center" onClick={fetchCounties}>
                 <Filter className="w-5 h-5 mr-2" />
-                More Filters
+                Refresh
               </Button>
             </div>
           </Card>
 
           {/* Top Counties Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="text-sm text-gray-400 mb-1">Highest Yield</div>
-                  <div className="text-2xl font-bold">Williamson, TX</div>
-                </div>
-                <Badge variant="gold">50%</Badge>
-              </div>
-              <p className="text-sm text-gray-400">
-                Austin metro. Tax deed state with 25-50% redemption premiums. Highest ROI in US.
-              </p>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="text-sm text-gray-400 mb-1">Lowest Crime</div>
-                  <div className="text-2xl font-bold">Warren, OH</div>
-                </div>
-                <Badge variant="emerald">Score: 8</Badge>
-              </div>
-              <p className="text-sm text-gray-400">
-                Cincinnati metro. Extremely safe with 18% fixed rate on tax liens.
-              </p>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="text-sm text-gray-400 mb-1">Next Auction</div>
-                  <div className="text-2xl font-bold">Johnson, IA</div>
-                </div>
-                <Badge>Jun 15</Badge>
-              </div>
-              <p className="text-sm text-gray-400">
-                Iowa City area. 24% interest rate with low crime and low competition.
-              </p>
-            </Card>
-          </div>
+          {upcomingAuctions.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {upcomingAuctions.map((county, idx) => (
+                <Card key={county.id} className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="text-sm text-gray-400 mb-1">
+                        {idx === 0 ? 'Next Auction' : `Upcoming ${idx + 1}`}
+                      </div>
+                      <div className="text-2xl font-bold">{county.county}, {county.state}</div>
+                    </div>
+                    <Badge variant={idx === 0 ? 'gold' : 'gray'}>
+                      {county.auction_date ? new Date(county.auction_date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                      }) : 'TBD'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-400 line-clamp-2">
+                    {county.platform} • {county.format}
+                  </p>
+                </Card>
+              ))}
+            </div>
+          )}
 
           {/* Counties Grid */}
           <div className="space-y-4">
-            {sortedCounties.map((county) => {
-              const crimeLevel = getCrimeLevel(county.crimeScore)
-
-              return (
+            {loading ? (
+              <Card className="p-8 text-center">
+                <p className="text-gray-400">Loading counties...</p>
+              </Card>
+            ) : sortedCounties.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-gray-400">No counties found matching your criteria</p>
+              </Card>
+            ) : (
+              sortedCounties.map((county) => (
                 <Card key={county.id} hover className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* County Info */}
-                    <div className="lg:col-span-3">
+                    <div className="lg:col-span-4">
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <div className="flex items-center space-x-2 mb-1">
                             <MapPin className="w-4 h-4 text-emerald-400" />
                             <h3 className="text-xl font-bold">{county.county}, {county.state}</h3>
                           </div>
-                          <p className="text-sm text-gray-400">{county.auctionType}</p>
+                          <p className="text-sm text-gray-400">{county.sale_type}</p>
                         </div>
-                        <button className="text-gray-400 hover:text-gold-400 transition-colors">
-                          <Star className="w-5 h-5" />
-                        </button>
                       </div>
-                      <Badge
-                        variant={county.investorScore >= 95 ? 'emerald' : county.investorScore >= 85 ? 'gold' : 'gray'}
-                        className="text-sm"
-                      >
-                        Score: {county.investorScore}
+                      <Badge variant="blue" className="text-sm">
+                        {county.platform}
                       </Badge>
                     </div>
 
                     {/* Metrics Grid */}
-                    <div className="lg:col-span-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1 flex items-center">
-                          <DollarSign className="w-3 h-3 mr-1" />
-                          Interest Rate
-                        </div>
-                        <div className="text-lg font-bold text-gold-400">
-                          {county.maxInterestRate}%
-                        </div>
-                      </div>
-
+                    <div className="lg:col-span-5 grid grid-cols-2 gap-4">
                       <div>
                         <div className="text-xs text-gray-400 mb-1 flex items-center">
                           <Calendar className="w-3 h-3 mr-1" />
-                          Next Auction
+                          Auction Date
                         </div>
                         <div className="text-sm font-semibold">
-                          {new Date(county.auctionDate).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+                          {county.auction_date
+                            ? new Date(county.auction_date).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })
+                            : 'See window'}
                         </div>
                       </div>
 
                       <div>
                         <div className="text-xs text-gray-400 mb-1">Format</div>
-                        <Badge variant="blue" className="text-xs">
-                          {county.auctionFormat}
+                        <Badge variant="emerald" className="text-xs">
+                          {county.format}
                         </Badge>
                       </div>
 
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Median Value</div>
-                        <div className="text-sm font-semibold">
-                          ${(county.medianHomeValue / 1000).toFixed(0)}k
+                      <div className="col-span-2">
+                        <div className="text-xs text-gray-400 mb-1">Sale Window</div>
+                        <div className="text-sm">
+                          {county.sale_date_window}
                         </div>
-                      </div>
-
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Crime Risk</div>
-                        <Badge variant={crimeLevel.variant} className="text-xs">
-                          {crimeLevel.label}
-                        </Badge>
-                      </div>
-
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Competition</div>
-                        <Badge variant={getCompetitionColor(county.competitionLevel)} className="text-xs capitalize">
-                          {county.competitionLevel}
-                        </Badge>
                       </div>
                     </div>
 
                     {/* Actions */}
                     <div className="lg:col-span-3 flex flex-col justify-between space-y-3">
-                      <Link href="/marketplace" className="w-full">
-                        <Button variant="primary" size="sm" className="w-full">
-                          View Opportunities
-                        </Button>
-                      </Link>
                       <a
-                        href={county.auctionWebsite}
+                        href={county.registration_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn-secondary text-center text-sm flex items-center justify-center"
+                        className="btn-primary text-center text-sm flex items-center justify-center"
                       >
-                        Auction Website
+                        Register
                         <ExternalLink className="w-4 h-4 ml-2" />
                       </a>
+                      {county.source_url && (
+                        <a
+                          href={county.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-secondary text-center text-sm flex items-center justify-center"
+                        >
+                          County Website
+                          <ExternalLink className="w-4 h-4 ml-2" />
+                        </a>
+                      )}
                     </div>
                   </div>
 
                   {/* Additional Info */}
-                  <div className="mt-4 pt-4 border-t border-white/10">
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <div>
-                        Population: {(county.population / 1000).toFixed(0)}k
-                        {' · '}
-                        Redemption: {county.redemptionMonths} months
-                      </div>
-                      {county.investorScore >= 90 && (
-                        <div className="flex items-center text-emerald-400">
-                          <TrendingUp className="w-3 h-3 mr-1" />
-                          Top Opportunity
-                        </div>
-                      )}
+                  {county.notes && (
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <p className="text-sm text-gray-300">
+                        {county.notes}
+                      </p>
                     </div>
-                  </div>
+                  )}
                 </Card>
-              )
-            })}
+              ))
+            )}
           </div>
 
           {/* Info */}
-          <div className="text-center mt-8">
-            <p className="text-gray-400">
-              Showing all {counties.length} verified counties · All auction links verified and working
-            </p>
-          </div>
+          {!loading && counties.length > 0 && (
+            <div className="text-center mt-8">
+              <p className="text-gray-400">
+                Showing {sortedCounties.length} of {counties.length} counties across {allStates.length} states
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
