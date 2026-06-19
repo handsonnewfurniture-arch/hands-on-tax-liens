@@ -29,11 +29,36 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
+        const listingId = session.metadata?.listing_id
         const userId = session.metadata?.userId
         const customerId = session.customer as string
         const subscriptionId = session.subscription as string
 
-        // Update user with Stripe customer ID
+        // Handle listing payment
+        if (listingId) {
+          console.log(`Processing listing payment for listing ${listingId}`)
+
+          // Activate the listing
+          const { error: listingError } = await supabase
+            .from('marketplace_listings')
+            .update({
+              status: 'active',
+              payment_status: 'paid',
+              stripe_payment_intent: session.payment_intent,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', listingId)
+
+          if (listingError) {
+            console.error('Failed to activate listing:', listingError)
+          } else {
+            console.log(`Listing ${listingId} activated successfully`)
+          }
+
+          break
+        }
+
+        // Handle subscription payment
         if (userId) {
           await supabase
             .from('users')

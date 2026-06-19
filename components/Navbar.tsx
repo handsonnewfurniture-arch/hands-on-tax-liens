@@ -37,6 +37,9 @@ export default function Navbar() {
             <Link href="/marketplace" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
               Marketplace
             </Link>
+            <Link href="/sell" className="text-green-600 hover:text-green-700 transition-colors font-semibold">
+              Sell Property
+            </Link>
             <Link href="/counties" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
               Counties
             </Link>
@@ -142,6 +145,13 @@ export default function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Marketplace
+            </Link>
+            <Link
+              href="/sell"
+              className="block text-green-600 hover:text-green-700 transition-colors py-2 font-semibold"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Sell Property
             </Link>
             <Link
               href="/counties"
