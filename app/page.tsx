@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronDown, Check, ShieldCheck, BookOpen, TrendingUp, MapPin, FileSearch } from 'lucide-react'
+import FeaturedDeals from '@/components/FeaturedDeals'
+import LiveStats from '@/components/LiveStats'
 
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -146,6 +148,12 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Live Stats Banner */}
+      <LiveStats />
+
+      {/* Featured Deals Section */}
+      <FeaturedDeals />
 
       {/* Social Proof Strip */}
       <section className="bg-forest-900 py-12">
