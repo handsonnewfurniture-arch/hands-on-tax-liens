@@ -33,18 +33,33 @@ export async function POST(request: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Find referral by code
-    const { data: referral, error: findError } = await supabase
+    // For click and signup events, we accept placeholders
+    // For conversion, we need a real referral with a referee
+    let query = supabase
       .from('referrals')
       .select('*')
       .eq('referral_code', referral_code)
-      .neq('referee_email', 'placeholder@placeholder.com')
-      .single()
 
-    if (findError || !referral) {
+    // Only filter out placeholders for conversion events (which need a real signup first)
+    if (event_type === 'conversion') {
+      query = query.neq('referee_email', 'placeholder@placeholder.com')
+    }
+
+    const { data: referrals, error: findError } = await query
+
+    if (findError || !referrals || referrals.length === 0) {
       return NextResponse.json(
         { error: 'Invalid referral code' },
         { status: 404 }
       )
+    }
+
+    // For conversion, find the matching referee's record
+    // For click/signup, use placeholder or first record
+    let referral = referrals[0]
+    if (event_type === 'conversion' && referrals.length > 1) {
+      // Find the specific referee if multiple exist
+      referral = referrals.find(r => r.referee_email !== 'placeholder@placeholder.com') || referrals[0]
     }
 
     // Get client info
@@ -77,13 +92,12 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // Check if this email already signed up via another referral
+        // Check if this email already signed up via any referral
         const { data: existingSignup } = await supabase
           .from('referrals')
           .select('id')
           .eq('referee_email', referee_email)
-          .eq('status', 'signed_up')
-          .neq('id', referral.id)
+          .in('status', ['signed_up', 'converted', 'rewarded'])
           .single()
 
         if (existingSignup) {
@@ -93,13 +107,41 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        updateData = {
-          ...updateData,
-          status: 'signed_up',
-          referee_email,
-          referee_user_id: referee_user_id || null,
-          signed_up_at: new Date().toISOString(),
-          referee_ip: ip
+        // If this is a placeholder, update it. Otherwise create new record
+        if (referral.referee_email === 'placeholder@placeholder.com') {
+          updateData = {
+            ...updateData,
+            status: 'signed_up',
+            referee_email,
+            referee_user_id: referee_user_id || null,
+            signed_up_at: new Date().toISOString(),
+            referee_ip: ip
+          }
+        } else {
+          // Create new referral record for this referee
+          const { data: newReferral, error: createError } = await supabase
+            .from('referrals')
+            .insert({
+              referrer_user_id: referral.referrer_user_id,
+              referrer_email: referral.referrer_email,
+              referee_email,
+              referee_user_id: referee_user_id || null,
+              referral_code: referral_code,
+              status: 'signed_up',
+              signed_up_at: new Date().toISOString(),
+              referee_ip: ip,
+              user_agent: userAgent
+            })
+            .select()
+            .single()
+
+          if (createError) throw createError
+
+          return NextResponse.json({
+            success: true,
+            referral: newReferral,
+            event_type
+          })
         }
         break
 

@@ -295,22 +295,25 @@ AFTER INSERT OR UPDATE ON referrals
 FOR EACH ROW
 EXECUTE FUNCTION update_referral_stats();
 
+-- Function to update timestamps
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Update timestamps
 CREATE TRIGGER update_referrals_timestamp
 BEFORE UPDATE ON referrals
 FOR EACH ROW
-EXECUTE FUNCTION (
-  NEW.updated_at = NOW();
-  RETURN NEW;
-);
+EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_referral_rewards_timestamp
 BEFORE UPDATE ON referral_rewards
 FOR EACH ROW
-EXECUTE FUNCTION (
-  NEW.updated_at = NOW();
-  RETURN NEW;
-);
+EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
 -- ROW LEVEL SECURITY
