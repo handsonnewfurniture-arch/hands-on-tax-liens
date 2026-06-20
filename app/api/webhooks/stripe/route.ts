@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabase'
+import { trackReferralConversion } from '@/lib/referrals'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
           })
 
         // Update user tier and status
-        await supabase
+        const { data: updatedUser } = await supabase
           .from('users')
           .update({
             subscription_tier: tier,
@@ -120,6 +121,34 @@ export async function POST(req: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq('stripe_customer_id', customerId)
+          .select('id, email')
+          .single()
+
+        // Track referral conversion (if from referral)
+        if (updatedUser && subscription.status === 'active') {
+          try {
+            // Get tier values
+            const tierValues = {
+              starter: 29,
+              pro: 79,
+              elite: 199
+            }
+
+            await trackReferralConversion({
+              email: updatedUser.email,
+              userId: updatedUser.id,
+              tier: tier as 'starter' | 'pro' | 'elite',
+              value: tierValues[tier as keyof typeof tierValues] || 0,
+              subscriptionId: subscription.id,
+              paymentIntent: subscription.latest_invoice as string
+            })
+
+            console.log(`Referral conversion tracked for user ${updatedUser.id}`)
+          } catch (conversionError) {
+            // Don't fail webhook if referral tracking fails
+            console.error('Referral conversion tracking failed:', conversionError)
+          }
+        }
 
         break
       }
