@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS referrals (
   referee_email TEXT NOT NULL,
   referee_user_id UUID,
 
-  -- Referral code and tracking
-  referral_code TEXT UNIQUE NOT NULL,
+  -- Referral code and tracking (NOT UNIQUE - multiple people can use same code)
+  referral_code TEXT NOT NULL,
   referral_url TEXT,
 
   -- Status tracking

@@ -58,8 +58,13 @@ export async function POST(request: NextRequest) {
     // For click/signup, use placeholder or first record
     let referral = referrals[0]
     if (event_type === 'conversion' && referrals.length > 1) {
-      // Find the specific referee if multiple exist
-      referral = referrals.find(r => r.referee_email !== 'placeholder@placeholder.com') || referrals[0]
+      // If referee_email provided, find that specific referral
+      if (referee_email) {
+        referral = referrals.find(r => r.referee_email === referee_email) || referrals[0]
+      } else {
+        // Otherwise find the first non-placeholder
+        referral = referrals.find(r => r.referee_email !== 'placeholder@placeholder.com') || referrals[0]
+      }
     }
 
     // Get client info
